@@ -9,6 +9,7 @@ const API_KEY = process.env.KALSHI_API_KEY;
 
 const COINS = ["BTC", "ETH", "SOL", "HYPE", "XRP", "BNB", "DOGE"];
 
+// ✅ Health check route
 app.get("/", (req, res) => {
   res.send("Server is running");
 });
@@ -18,30 +19,45 @@ app.get("/api/markets", async (req, res) => {
     const results = [];
 
     for (let coin of COINS) {
-      const response = await fetch(
-        `https://api.elections.kalshi.com/trade-api/v2/markets?search=${coin}`,
-        {
-          headers: {
-            Authorization: `Bearer ${API_KEY}`,
-          },
+      try {
+        const response = await fetch(
+          `https://api.elections.kalshi.com/trade-api/v2/markets?search=${coin}`,
+          {
+            headers: {
+              Authorization: `Bearer ${API_KEY}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          console.log(`API error for ${coin}:`, response.status);
+          continue;
         }
-      );
 
-      const data = await response.json();
-      const market = data.markets?.[0];
+        const data = await response.json();
+        const market = data.markets?.[0];
 
-      if (!market) continue;
+        if (!market) {
+          console.log(`No market found for ${coin}`);
+          continue;
+        }
 
-      const current = parseFloat(market.last_price || 0);
-      const target = parseFloat(market.strike_price || 1);
+        const current = parseFloat(market.last_price || 0);
+        const target = parseFloat(market.strike_price || 1);
 
-      const percent = (((current - target) / target) * 100).toFixed(2);
+        const percent = (((current - target) / target) * 100).toFixed(2);
 
-      results.push({ coin, current, target, percent });
+        results.push({ coin, current, target, percent });
+
+      } catch (err) {
+        console.log(`Fetch failed for ${coin}:`, err.message);
+      }
     }
 
     res.json(results);
+
   } catch (err) {
+    console.log("Server error:", err.message);
     res.status(500).send("Error");
   }
 });
