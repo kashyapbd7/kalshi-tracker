@@ -9,6 +9,10 @@ const API_KEY = process.env.KALSHI_API_KEY;
 
 const COINS = ["BTC", "ETH", "SOL", "HYPE", "XRP", "BNB", "DOGE"];
 
+app.get("/", (req, res) => {
+  res.send("Server is running");
+});
+
 app.get("/api/markets", async (req, res) => {
   try {
     const results = [];
